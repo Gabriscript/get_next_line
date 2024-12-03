@@ -17,7 +17,7 @@
 # include<fcntl.h>
 # include<stdlib.h>
 # include<unistd.h>
-# define BUFFER_SIZE 10
+# define BUFFER_SIZE 2000
 
 char	*get_next_line(int fd);
 char	*ft_strjoin(char *s1, char *s2);
