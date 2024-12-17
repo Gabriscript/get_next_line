@@ -22,15 +22,12 @@ char	*get_next_line(int fd)
 	char		*line;
 	char		*buffer;
 
-	buffer = (char *)malloc((BUFFER_SIZE + 1) * sizeof(char));
 	if (fd < 0 || BUFFER_SIZE <= 0)
 	{
 		free(remaining);
-		free(buffer);
-		remaining = NULL;
-		buffer = NULL;
 		return (NULL);
 	}
+	buffer = (char *)malloc((BUFFER_SIZE + 1) * sizeof(char));
 	if (!buffer)
 		return (NULL);
 	remaining = fill_buffer(fd, remaining, buffer);
@@ -76,14 +73,10 @@ static char	*extract_line(char *remaining)
 {
 	char	*newline_pos;
 	char	*line;
-	ssize_t	line_length;
 
 	newline_pos = ft_strchr(remaining, '\n');
 	if (newline_pos)
-	{	
-		line_length = newline_pos - remaining + 1;
-		line = ft_substr(remaining, 0, line_length);
-	}
+		line = ft_substr(remaining, 0, newline_pos - remaining + 1);
 	else
 		line = ft_strdup(remaining);
 	return (line);

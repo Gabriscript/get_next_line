@@ -16,6 +16,8 @@ int	ft_strlen(char *s)
 {
 	int	i;
 
+	if (!s)
+		return (0);
 	i = 0;
 	while (s[i])
 		i++;
@@ -28,6 +30,8 @@ char	*ft_strdup(char *s)
 	int		len;
 	char	*dest;
 
+	if (!s)
+		return (NULL);
 	len = ft_strlen(s);
 	dest = (char *)malloc(len + 1);
 	if (!dest)
