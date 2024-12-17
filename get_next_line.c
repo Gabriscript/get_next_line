@@ -6,124 +6,106 @@
 /*   By: ggargani <ggargani@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 08:09:30 by ggargani          #+#    #+#             */
-/*   Updated: 2024/12/03 08:51:08 by ggargani         ###   ########.fr       */
+/*   Updated: 2024/12/17 09:26:28 by ggargani         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include"get_next_line.h" 
-#include<fcntl.h>
-#include<stdlib.h>
-#include<unistd.h>
+#include"get_next_line.h"
 
-char		*get_remaining_line(char *str);
-char		*get_this_line(char *str);
-char		*read_file(int fd, char *buffer);
-static char	*read_fails_check(char *buff);
+static char	*update_remaining(char *remaining);
+static char	*extract_line(char *remaining);
+static char	*fill_buffer(int fd, char *remaining, char *buffer);
 
 char	*get_next_line(int fd)
 {
-	static char	*buffer;
+	static char	*remaining;
 	char		*line;
-	char		*temp;
+	char		*buffer;
 
+	buffer = (char *)malloc((BUFFER_SIZE + 1) * sizeof(char));
 	if (fd < 0 || BUFFER_SIZE <= 0)
-		return (NULL);
-	while (1)
 	{
-		buffer = read_file(fd, buffer);
-		if (!buffer)
-		{
-			free (buffer);
-			return (NULL);
-		}
-		if (ft_strchr(buffer, '\n') >= 0)
-		{
-			line = get_this_line(buffer);
-			temp = buffer;
-			buffer = get_remaining_line(buffer);
-			free(temp);
-			return (line);
-		}
-	}
-}
-
-char	*read_file(int fd, char *buffer)
-{
-	char	*temp;
-	int		bytes_read;
-	char	*temp_buffer;
-
-	temp = malloc(BUFFER_SIZE + 1);
-	if (!temp)
+		free(remaining);
+		free(buffer);
+		remaining = NULL;
+		buffer = NULL;
 		return (NULL);
-	bytes_read = read(fd, temp, BUFFER_SIZE);
-	if (bytes_read <= 0)
-	{
-		free(temp);
-		return (read_fails_check(buffer));
 	}
-	temp[bytes_read] = '\0';
 	if (!buffer)
-		buffer = ft_strdup(temp);
-	else
-	{
-		temp_buffer = buffer;
-		buffer = ft_strjoin(buffer, temp);
-		free(temp_buffer);
-	}
-	free(temp);
-	return (buffer);
-}
-
-static char	*read_fails_check(char *buff)
-{
-	char	*remaining;
-
-	if (buff && *buff)
-	{
-		remaining = ft_strdup(buff);
-		free(buff);
-		return (remaining);
-	}
-	return (NULL);
-}
-
-char	*get_this_line(char *str)
-{
-	char	*line;
-	int		len;
-
-	if (!str || !*str)
 		return (NULL);
-	len = ft_strchr(str, '\n');
-	if (len == -1)
-		return (ft_strdup(str));
-	line = malloc(len + 2);
-	if (!line)
+	remaining = fill_buffer(fd, remaining, buffer);
+	free(buffer);
+	buffer = NULL;
+	if (!remaining)
 		return (NULL);
-	ft_memcpy(line, str, len + 1);
-	line[len + 1] = '\0';
+	line = extract_line(remaining);
+	remaining = update_remaining(remaining);
 	return (line);
 }
 
-char	*get_remaining_line(char *str)
+static char	*fill_buffer(int fd, char *remaining, char *buffer)
 {
-	char	*line_remained;
-	int		len_to_skip;
-	int		len;
+	ssize_t	bytes_read;
+	char	*temp;
 
-	if (!str || !*str)
-		return (NULL);
-	len_to_skip = ft_strchr(str, '\n');
-	if (len_to_skip == -1)
-		return (NULL);
-	len = ft_strlen(str) - len_to_skip - 1;
-	if (len <= 0)
-		return (NULL);
-	line_remained = malloc(len + 1);
-	if (!line_remained)
-		return (NULL);
-	ft_memcpy(line_remained, str + len_to_skip + 1, len);
-	line_remained[len] = '\0';
-	return (line_remained);
+	bytes_read = 1;
+	while (bytes_read > 0)
+	{
+		bytes_read = read(fd, buffer, BUFFER_SIZE);
+		if (bytes_read == -1)
+		{
+			free(remaining);
+			return (NULL);
+		}
+		else if (bytes_read == 0)
+			break ;
+		buffer[bytes_read] = '\0';
+		if (!remaining)
+			remaining = ft_strdup("");
+		temp = remaining;
+		remaining = ft_strjoin(temp, buffer);
+		free(temp);
+		temp = NULL;
+		if (ft_strchr(buffer, '\n'))
+			break ;
+	}
+	return (remaining);
+}
+
+static char	*extract_line(char *remaining)
+{
+	char	*newline_pos;
+	char	*line;
+	ssize_t	line_length;
+
+	newline_pos = ft_strchr(remaining, '\n');
+	if (newline_pos)
+	{	
+		line_length = newline_pos - remaining + 1;
+		line = ft_substr(remaining, 0, line_length);
+	}
+	else
+		line = ft_strdup(remaining);
+	return (line);
+}
+
+static char	*update_remaining(char *remaining)
+{
+	char	*newline_pos;
+	char	*new_remaining;
+
+	newline_pos = ft_strchr(remaining, '\n');
+	if (newline_pos)
+	{
+		new_remaining = ft_strdup(newline_pos + 1);
+		free(remaining);
+		if (new_remaining && *new_remaining == '\0')
+		{
+			free(new_remaining);
+			new_remaining = NULL;
+		}
+		return (new_remaining);
+	}
+	free(remaining);
+	return (NULL);
 }
